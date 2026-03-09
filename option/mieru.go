@@ -10,4 +10,17 @@ type MieruOutboundOptions struct {
 	UserName         string                     `json:"username,omitempty"`
 	Password         string                     `json:"password,omitempty"`
 	Multiplexing     string                     `json:"multiplexing,omitempty"`
+	TrafficPattern   string                     `json:"traffic_pattern,omitempty"`
+}
+
+type MieruInboundOptions struct {
+	ListenOptions
+	Users          []MieruUser `json:"users,omitempty"`
+	Transport      string      `json:"transport,omitempty"`
+	TrafficPattern string      `json:"traffic_pattern,omitempty"`
+}
+
+type MieruUser struct {
+	Name     string `json:"name,omitempty"`
+	Password string `json:"password,omitempty"`
 }
