@@ -1,3 +1,5 @@
+//go:build with_gvisor
+
 package tailscale
 
 import (
@@ -324,6 +326,9 @@ func (t *Endpoint) Start(stage adapter.StartStage) error {
 		}
 		t.systemTun = systemTun
 		t.server.TunDevice = wgTunDevice
+		t.server.RouterWrapper = func(inner router.Router) router.Router {
+			return &exitRouteFilteringRouter{Router: inner}
+		}
 	}
 	err := t.server.Start()
 	if err != nil {
