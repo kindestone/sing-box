@@ -13,7 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
+//	"runtime"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -48,7 +48,7 @@ import (
 	"github.com/sagernet/tailscale/ipn"
 	tsDNS "github.com/sagernet/tailscale/net/dns"
 	"github.com/sagernet/tailscale/net/netmon"
-	"github.com/sagernet/tailscale/net/netns"
+//	"github.com/sagernet/tailscale/net/netns"
 	"github.com/sagernet/tailscale/net/tsaddr"
 	tsTUN "github.com/sagernet/tailscale/net/tstun"
 	"github.com/sagernet/tailscale/tsnet"
@@ -337,6 +337,7 @@ func (t *Endpoint) Start(stage adapter.StartStage) error {
 			return &exitRouteFilteringRouter{Router: inner}
 		}
 	}
+	/*
 	if mark := t.network.AutoRedirectOutputMark(); mark > 0 {
 		controlFunc := t.network.AutoRedirectOutputMarkFunc()
 		if bindFunc := t.network.AutoDetectInterfaceFunc(); bindFunc != nil {
@@ -350,6 +351,7 @@ func (t *Endpoint) Start(stage adapter.StartStage) error {
 			})
 		})
 	}
+	*/
 	err := t.server.Start()
 	if err != nil {
 		if t.systemTun != nil {
@@ -475,7 +477,7 @@ func (t *Endpoint) watchState() {
 
 func (t *Endpoint) Close() error {
 	netmon.RegisterInterfaceGetter(nil)
-	netns.SetControlFunc(nil)
+//	netns.SetControlFunc(nil)
 	if t.fallbackTCPCloser != nil {
 		t.fallbackTCPCloser()
 		t.fallbackTCPCloser = nil
