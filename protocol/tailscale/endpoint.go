@@ -333,9 +333,11 @@ func (t *Endpoint) Start(stage adapter.StartStage) error {
 		t.systemTun = systemTun
 		t.systemDialer = systemDialer
 		t.server.TunDevice = wgTunDevice
+/*
 		t.server.RouterWrapper = func(inner router.Router) router.Router {
 			return &exitRouteFilteringRouter{Router: inner}
 		}
+		*/
 	}
 	/*
 	if mark := t.network.AutoRedirectOutputMark(); mark > 0 {
