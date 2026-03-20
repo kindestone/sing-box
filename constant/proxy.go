@@ -32,6 +32,7 @@ const (
 	TypeCCM          = "ccm"
 	TypeOCM          = "ocm"
 	TypeOOMKiller    = "oom-killer"
+	TypeJuicity      = "juicity"
 )
 
 const (
@@ -95,6 +96,8 @@ func ProxyDisplayName(proxyType string) string {
 		return "Selector"
 	case TypeURLTest:
 		return "URLTest"
+	case TypeJuicity:
+		return "Juicity"
 	default:
 		return "Unknown"
 	}
