@@ -256,11 +256,12 @@ func (e *Endpoint) ListenPacket(ctx context.Context, destination M.Socksaddr) (n
 }
 
 func (e *Endpoint) Close() error {
-	if e.device != nil {
-		e.device.Close()
-	}
 	if e.pauseCallback != nil {
 		e.pause.UnregisterCallback(e.pauseCallback)
+	}
+	if e.device != nil {
+		e.device.Down()
+		e.device.Close()
 	}
 	return nil
 }
