@@ -12,18 +12,21 @@ import (
 	_ "github.com/sagernet/sing-box/protocol/naive/quic"
 	"github.com/sagernet/sing-box/protocol/tuic"
 	_ "github.com/sagernet/sing-box/transport/v2rayquic"
+	"github.com/sagernet/sing-box/protocol/juicity"
 )
 
 func registerQUICInbounds(registry *inbound.Registry) {
 	hysteria.RegisterInbound(registry)
 	tuic.RegisterInbound(registry)
 	hysteria2.RegisterInbound(registry)
+	juicity.RegisterInbound(registry)
 }
 
 func registerQUICOutbounds(registry *outbound.Registry) {
 	hysteria.RegisterOutbound(registry)
 	tuic.RegisterOutbound(registry)
 	hysteria2.RegisterOutbound(registry)
+	juicity.RegisterOutbound(registry)
 }
 
 func registerQUICTransports(registry *dns.TransportRegistry) {
