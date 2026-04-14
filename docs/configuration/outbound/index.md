@@ -39,6 +39,7 @@
 | `urltest`      | [URLTest](./urltest/)           |
 | `naive`        | [NaiveProxy](./naive/)          |
 | `trusttunnel`  | [TrustTunnel](./trusttunnel/)   |
+| `juicity`      | [Juicity](./juicity/)           |
 
 #### tag
 

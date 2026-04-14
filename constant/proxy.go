@@ -96,6 +96,8 @@ func ProxyDisplayName(proxyType string) string {
 		return "Tailscale"
 	case TypeTrustTunnel:
 		return "TrustTunnel"
+	case TypeMieru:
+		return "Mieru"
 	case TypeSelector:
 		return "Selector"
 	case TypeURLTest:
