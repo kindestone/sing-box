@@ -3,9 +3,6 @@
 A reference implementation of [mieru](https://github.com/enfein/mieru) protocol
 in sing-box.
 
-We don't guarantee all sing-box features are working. We recommend you maintain
-your own fork.
-
 ## Example Configuration with mieru Outbound (Proxy Client)
 
 ```js
