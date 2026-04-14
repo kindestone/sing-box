@@ -94,6 +94,7 @@ func OutboundRegistry() *outbound.Registry {
 	shadowtls.RegisterOutbound(registry)
 	vless.RegisterOutbound(registry)
 	anytls.RegisterOutbound(registry)
+
 	trusttunnel.RegisterOutbound(registry)
 	mieru.RegisterOutbound(registry)
 

@@ -32,6 +32,7 @@
 | `vless`       | [VLESS](./vless/)             | TCP              |
 | `anytls`      | [AnyTLS](./anytls/)           | TCP              |
 | `trusttunnel` | [TrustTunnel](./trusttunnel/) | TCP              |
+| `juicity`     | [Juicity](./juicity/)         | TCP              |
 | `mieru`       | [Mieru](./mieru/)             | :material-close: |
 | `tun`         | [Tun](./tun/)                 | :material-close: |
 | `redirect`    | [Redirect](./redirect/)       | :material-close: |
