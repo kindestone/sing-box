@@ -90,8 +90,6 @@ func ProxyDisplayName(proxyType string) string {
 		return "Hysteria2"
 	case TypeAnyTLS:
 		return "AnyTLS"
-	case TypeMieru:
-		return "Mieru"
 	case TypeTailscale:
 		return "Tailscale"
 	case TypeTrustTunnel:
