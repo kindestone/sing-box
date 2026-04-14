@@ -34,6 +34,7 @@ const (
 	TypeOOMKiller    = "oom-killer"
 	TypeJuicity      = "juicity"
 	TypeTrustTunnel  = "trusttunnel"
+	TypeAwg          = "awg"
 )
 
 const (
@@ -101,6 +102,8 @@ func ProxyDisplayName(proxyType string) string {
 		return "URLTest"
 	case TypeJuicity:
 		return "Juicity"
+	case TypeAwg:
+		return "Awg"
 	default:
 		return "Unknown"
 	}
