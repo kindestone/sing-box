@@ -3,12 +3,15 @@ module github.com/sagernet/sing-box
 go 1.24.7
 
 require (
+	github.com/amnezia-vpn/amneziawg-go v0.2.17-0.20251219021448-449d7cffd4ad
 	github.com/anthropics/anthropic-sdk-go v1.26.0
 	github.com/anytls/sing-anytls v0.0.11
 	github.com/caddyserver/certmagic v0.25.2
 	github.com/coder/websocket v1.8.14
 	github.com/cretz/bine v0.2.0
 	github.com/database64128/tfo-go/v2 v2.3.2
+	github.com/dyhkwong/sing-juicity v0.1.1
+	github.com/enfein/mieru/v3 v3.30.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-chi/render v1.0.3
 	github.com/godbus/dbus/v5 v5.2.2
@@ -48,6 +51,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/vishvananda/netns v0.0.5
+	github.com/xchacha20-poly1305/sing-trusttunnel v0.2.0
 	go.uber.org/zap v1.27.1
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 	golang.org/x/crypto v0.48.0
@@ -59,6 +63,7 @@ require (
 	google.golang.org/grpc v1.79.1
 	google.golang.org/protobuf v1.36.11
 	howett.net/plist v1.0.1
+	lukechampine.com/blake3 v1.3.0
 )
 
 require (
@@ -164,5 +169,7 @@ require (
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	lukechampine.com/blake3 v1.3.0 // indirect
+	gvisor.dev/gvisor v0.0.0-20231202080848-1f7806d17489 // indirect
 )
+
+replace github.com/sagernet/sing-vmess => github.com/qr243vbi/sing-vmess v0.0.0-20260411080559-a7fd69bb70c7

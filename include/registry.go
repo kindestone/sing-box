@@ -3,7 +3,7 @@ package include
 import (
 	"context"
 
-	"github.com/sagernet/sing-box"
+	box "github.com/sagernet/sing-box"
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/adapter/endpoint"
 	"github.com/sagernet/sing-box/adapter/inbound"
@@ -22,6 +22,7 @@ import (
 	"github.com/sagernet/sing-box/protocol/direct"
 	"github.com/sagernet/sing-box/protocol/group"
 	"github.com/sagernet/sing-box/protocol/http"
+	"github.com/sagernet/sing-box/protocol/mieru"
 	"github.com/sagernet/sing-box/protocol/mixed"
 	"github.com/sagernet/sing-box/protocol/naive"
 	"github.com/sagernet/sing-box/protocol/redirect"
@@ -31,6 +32,7 @@ import (
 	"github.com/sagernet/sing-box/protocol/ssh"
 	"github.com/sagernet/sing-box/protocol/tor"
 	"github.com/sagernet/sing-box/protocol/trojan"
+	"github.com/sagernet/sing-box/protocol/trusttunnel"
 	"github.com/sagernet/sing-box/protocol/tun"
 	"github.com/sagernet/sing-box/protocol/vless"
 	"github.com/sagernet/sing-box/protocol/vmess"
@@ -62,6 +64,8 @@ func InboundRegistry() *inbound.Registry {
 	shadowtls.RegisterInbound(registry)
 	vless.RegisterInbound(registry)
 	anytls.RegisterInbound(registry)
+	trusttunnel.RegistryInbound(registry)
+	mieru.RegisterInbound(registry)
 
 	registerQUICInbounds(registry)
 	registerStubForRemovedInbounds(registry)
@@ -91,6 +95,9 @@ func OutboundRegistry() *outbound.Registry {
 	vless.RegisterOutbound(registry)
 	anytls.RegisterOutbound(registry)
 
+	trusttunnel.RegisterOutbound(registry)
+	mieru.RegisterOutbound(registry)
+
 	registerQUICOutbounds(registry)
 	registerStubForRemovedOutbounds(registry)
 
@@ -102,6 +109,7 @@ func EndpointRegistry() *endpoint.Registry {
 
 	registerWireGuardEndpoint(registry)
 	registerTailscaleEndpoint(registry)
+	registerAwgEndpoint(registry)
 
 	return registry
 }
@@ -111,6 +119,7 @@ func DNSTransportRegistry() *dns.TransportRegistry {
 
 	transport.RegisterTCP(registry)
 	transport.RegisterUDP(registry)
+	transport.RegisterUnderlying(registry)
 	transport.RegisterTLS(registry)
 	transport.RegisterHTTPS(registry)
 	hosts.RegisterTransport(registry)
