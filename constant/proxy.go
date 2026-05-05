@@ -32,8 +32,11 @@ const (
 	TypeCCM          = "ccm"
 	TypeOCM          = "ocm"
 	TypeOOMKiller    = "oom-killer"
+<<<<<<< HEAD
 	TypeJuicity      = "juicity"
 	TypeTrustTunnel  = "trusttunnel"
+=======
+>>>>>>> ee58a22ed10f8a5634a2f6a03528f159fcd6bee8
 	TypeAwg          = "awg"
 )
 
@@ -100,8 +103,11 @@ func ProxyDisplayName(proxyType string) string {
 		return "Selector"
 	case TypeURLTest:
 		return "URLTest"
+<<<<<<< HEAD
 	case TypeJuicity:
 		return "Juicity"
+=======
+>>>>>>> ee58a22ed10f8a5634a2f6a03528f159fcd6bee8
 	case TypeAwg:
 		return "Awg"
 	default:
