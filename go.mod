@@ -174,4 +174,4 @@ require (
 
 replace github.com/sagernet/sing-vmess => github.com/qr243vbi/sing-vmess v0.0.0-20260411080559-a7fd69bb70c7
 
-replace github.com/sagernet/gvisor => github.com/nintendobox/gvisor v0.0.0-20250915152807-20b7e9b2d7e2
+replace github.com/sagernet/gvisor => github.com/nintendobox/gvisor v0.0.1-fix
