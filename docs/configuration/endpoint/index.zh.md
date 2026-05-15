@@ -23,6 +23,7 @@
 |-------------|---------------------------|
 | `wireguard` | [WireGuard](./wireguard/) |
 | `tailscale` | [Tailscale](./tailscale/) |
+| `amnezia`   | [Amnezia](./amnezia/)     |
 
 #### tag
 

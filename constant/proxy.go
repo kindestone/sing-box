@@ -20,6 +20,7 @@ const (
 	TypeSSH          = "ssh"
 	TypeShadowTLS    = "shadowtls"
 	TypeAnyTLS       = "anytls"
+	TypeMieru        = "mieru"
 	TypeShadowsocksR = "shadowsocksr"
 	TypeVLESS        = "vless"
 	TypeTUIC         = "tuic"
@@ -31,6 +32,9 @@ const (
 	TypeCCM          = "ccm"
 	TypeOCM          = "ocm"
 	TypeOOMKiller    = "oom-killer"
+	TypeJuicity      = "juicity"
+	TypeTrustTunnel  = "trusttunnel"
+	TypeAwg          = "awg"
 )
 
 const (
@@ -88,10 +92,18 @@ func ProxyDisplayName(proxyType string) string {
 		return "AnyTLS"
 	case TypeTailscale:
 		return "Tailscale"
+	case TypeTrustTunnel:
+		return "TrustTunnel"
+	case TypeMieru:
+		return "Mieru"
 	case TypeSelector:
 		return "Selector"
 	case TypeURLTest:
 		return "URLTest"
+	case TypeJuicity:
+		return "Juicity"
+	case TypeAwg:
+		return "Awg"
 	default:
 		return "Unknown"
 	}
