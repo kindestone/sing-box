@@ -12,6 +12,7 @@ import (
 	"unsafe"
 
 	"github.com/sagernet/sing-box/adapter"
+	"github.com/sagernet/sing/common"
 	"github.com/sagernet/sing/service"
 
 	"golang.org/x/sys/windows"
@@ -84,13 +85,13 @@ func dnsReadConfig(ctx context.Context, _ string) *dnsConfig {
 			}{ifName: windows.UTF16PtrToString(address.FriendlyName), Addr: dnsServerAddr})
 		}
 	}
-	var myInterface string
+	var myInterfaces []string
 	if networkManager := service.FromContext[adapter.NetworkManager](ctx); networkManager != nil {
-		myInterface = networkManager.InterfaceMonitor().MyInterface()
+		myInterfaces = networkManager.InterfaceMonitor().MyInterfaces()
 	}
 	customDns := false
 	for _, address := range dnsAddresses {
-		if address.ifName == myInterface {
+		if common.Contains(myInterfaces, address.ifName) {
 			continue
 		}
 		if address.String() == dhcpMarkAddr || address.String() == setMarkAddr {
