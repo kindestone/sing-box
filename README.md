@@ -1,20 +1,129 @@
-> Sponsored by [Warp](https://go.warp.dev/sing-box), built for coding with multiple AI agents
+# mbox
 
-<a href="https://go.warp.dev/sing-box">
-<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/raw/refs/heads/main/Github/Sponsor/Warp-Github-LG-02.png">
-</a>
+A reference implementation of [mieru](https://github.com/enfein/mieru) protocol
+in sing-box.
 
----
+## Example Configuration with mieru Outbound (Proxy Client)
 
-# sing-box
+```js
+{
+    "inbounds": [
+        {
+            "type": "mixed",
+            "tag": "mixed-in",
+            "listen": "0.0.0.0",
+            "listen_port": 1080
+        }
+    ],
+    "outbounds": [
+        {
+            "type": "mieru",
+            "tag": "mieru-out",
+            "server": "127.0.0.1",
+            "server_port": 8964,
+            "transport": "TCP",
+            "username": "baozi",
+            "password": "manlianpenfen",
+            "traffic_pattern": "GgQIARAK"
+        }
+    ],
+    "route": {
+        "rules": [
+            {
+                "inbound": ["mixed-in"],
+                "action": "route",
+                "outbound": "mieru-out"
+            }
+        ]
+    },
+    "log": {
+        "level": "warn"
+    }
+}
+```
 
-The universal proxy platform.
+You can also use `server_ports` to set a list of port ranges.
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/sing-box.svg)](https://repology.org/project/sing-box/versions)
+## Example Configuration with mieru Inbound (Proxy Server)
 
-## Documentation
+```js
+{
+    "inbounds": [
+        {
+            "type": "mieru",
+            "tag": "mieru-tcp",
+            "listen": "0.0.0.0",
+            "listen_port": 8964,
+            "transport": "TCP",
+            "users": [
+                {
+                    "name": "baozi",
+                    "password": "manlianpenfen"
+                }
+            ],
+            "traffic_pattern": "GgQIARAK"
+        }
+    ],
+    "outbounds": [],
+    "route": {},
+    "log": {
+        "level": "warn"
+    }
+}
+```
 
-https://sing-box.sagernet.org
+## Branches
+
+- `mieru` branch has the latest code based on recent upstream releases. It may not be stable.
+- `release-*` branches record the references where binaries are published. Those branches don't change after creation.
+
+## Limitations
+
+- UDP outbound can't use domain name as server address.
+
+# amnezia-box
+
+Fork of [sing-box](https://github.com/SagerNet/sing-box) with [AmneziaWG](https://docs.amnezia.org/documentation/amnezia-wg/) (AWG) support.
+
+> This is a fork of a fork: sing-box → [amnezia-vpn/sing-box](https://github.com/amnezia-vpn/sing-box) → amnezia-box
+
+## Features
+
+- Full sing-box functionality
+- AmneziaWG protocol support via [amneziawg-go](https://github.com/amnezia-vpn/amneziawg-go)
+- AWG 2.0 features: H1-H4 ranges, S3/S4 padding, I1-I5 obfuscation chains
+- Proper FakeIP and DNS routing support for AWG endpoint
+
+## AWG Endpoint DNS Resolution Fix
+
+The AWG endpoint implementation includes a fix for proper domain name resolution when used with sing-box's FakeIP or standard DNS routing.
+
+### Problem Solved
+
+The original AWG endpoint did not properly handle domain resolution:
+- FakeIP addresses (198.18.x.x) were not being resolved back to real IPs
+- Domain resolution failed inside netstack mode
+- Clash API delay tests returned errors
+
+### Solution
+
+AWG endpoint now overrides `DialContext()` and `ListenPacket()` methods to:
+1. Check if destination is a domain (FQDN)
+2. Use `dnsRouter.Lookup()` to resolve domains to real IPs
+3. Connect through the tunnel using resolved addresses
+
+This aligns AWG endpoint behavior with the standard WireGuard endpoint implementation.
+
+## Build
+
+```bash
+go build -tags "with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_acme,with_clash_api,with_awg" ./cmd/sing-box
+```
+
+## Branch Strategy
+
+- `alpha` → syncs with upstream `dev-next` (development)
+- `main` → syncs with upstream `stable-next` (stable releases)
 
 ## License
 

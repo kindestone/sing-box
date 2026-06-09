@@ -1,10 +1,12 @@
 NAME = sing-box
 COMMIT = $(shell git rev-parse --short HEAD)
-TAGS ?= $(shell cat release/DEFAULT_BUILD_TAGS_OTHERS)
+TAGS ?= $(shell cat release/DEFAULT_BUILD_TAGS_OTHERS),with_awg
 
 GOHOSTOS = $(shell go env GOHOSTOS)
 GOHOSTARCH = $(shell go env GOHOSTARCH)
-VERSION=$(shell CGO_ENABLED=0 GOOS=$(GOHOSTOS) GOARCH=$(GOHOSTARCH) go run github.com/sagernet/sing-box/cmd/internal/read_tag@latest)
+# Get version: use AWG tag if present, otherwise upstream tag + awg2.0 suffix
+NEAREST_TAG = $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+VERSION = $(patsubst v%,%,$(NEAREST_TAG))$(if $(findstring -awg,$(NEAREST_TAG)),,-awg2.0)
 
 LDFLAGS_SHARED = $(shell cat release/LDFLAGS)
 PARAMS = -v -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=$(VERSION)' $(LDFLAGS_SHARED) -s -w -buildid="
@@ -36,23 +38,17 @@ install:
 	go build -o $(PREFIX)/bin/$(NAME) $(MAIN_PARAMS) $(MAIN)
 
 fmt:
-	@gofumpt -l -w .
-	@gofmt -s -w .
-	@gci write --custom-order -s standard -s "prefix(github.com/sagernet/)" -s "default" .
+	@golangci-lint fmt
 
 fmt_docs:
 	go run ./cmd/internal/format_docs
-
-fmt_install:
-	go install -v mvdan.cc/gofumpt@latest
-	go install -v github.com/daixiang0/gci@latest
 
 lint:
 	GOOS=linux golangci-lint run ./...
 	GOOS=android golangci-lint run ./...
 	GOOS=windows golangci-lint run ./...
 	GOOS=darwin golangci-lint run ./...
-	GOOS=freebsd golangci-lint run ./...
+#	GOOS=freebsd golangci-lint run ./...
 
 lint_install:
 	go install -v github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
@@ -98,10 +94,13 @@ upload_android:
 	mkdir -p dist/release_android
 	cp ../sing-box-for-android/app/build/outputs/apk/other/release/*.apk dist/release_android
 	cp ../sing-box-for-android/app/build/outputs/apk/otherLegacy/release/*.apk dist/release_android
+	VERSION_CODE=$$(grep VERSION_CODE ../sing-box-for-android/version.properties | cut -d= -f2); \
+	VERSION_NAME=$$(grep VERSION_NAME ../sing-box-for-android/version.properties | cut -d= -f2); \
+	printf '{\n  "version_code": %s,\n  "version_name": "%s"\n}\n' "$$VERSION_CODE" "$$VERSION_NAME" > dist/release_android/SFA-version-metadata.json
 	ghr --replace --draft --prerelease -p 5 "v${VERSION}" dist/release_android
 	rm -rf dist/release_android
 
-release_android: lib_android update_android_version build_android upload_android
+release_android: build_android upload_android
 
 publish_android:
 	cd ../sing-box-for-android && ./gradlew :app:publishPlayReleaseBundle && ./gradlew --stop
@@ -174,13 +173,30 @@ upload_macos_pkg:
 	ghr --replace --draft --prerelease "v${VERSION}" "dist/SFM/SFM-${VERSION}-Intel.pkg"
 	ghr --replace --draft --prerelease "v${VERSION}" "dist/SFM/SFM-${VERSION}-Universal.pkg"
 
+replace_macos_pkg:
+	mkdir -p dist/SFM
+	cp ../sing-box-for-apple/build/SFM-Apple.pkg "dist/SFM/SFM-${VERSION}-Apple.pkg"
+	cp ../sing-box-for-apple/build/SFM-Intel.pkg "dist/SFM/SFM-${VERSION}-Intel.pkg"
+	cp ../sing-box-for-apple/build/SFM-Universal.pkg "dist/SFM/SFM-${VERSION}-Universal.pkg"
+	ghr --replace "v${VERSION}" "dist/SFM/SFM-${VERSION}-Apple.pkg"
+	ghr --replace "v${VERSION}" "dist/SFM/SFM-${VERSION}-Intel.pkg"
+	ghr --replace "v${VERSION}" "dist/SFM/SFM-${VERSION}-Universal.pkg"
+
 upload_macos_dsyms:
 	mkdir -p dist/SFM
 	cd ../sing-box-for-apple/build/SFM.System-universal.xcarchive && zip -r SFM.dSYMs.zip dSYMs
 	cp ../sing-box-for-apple/build/SFM.System-universal.xcarchive/SFM.dSYMs.zip "dist/SFM/SFM-${VERSION}.dSYMs.zip"
 	ghr --replace --draft --prerelease "v${VERSION}" "dist/SFM/SFM-${VERSION}.dSYMs.zip"
 
+replace_macos_dsyms:
+	mkdir -p dist/SFM
+	cd ../sing-box-for-apple/build/SFM.System-universal.xcarchive && zip -r SFM.dSYMs.zip dSYMs
+	cp ../sing-box-for-apple/build/SFM.System-universal.xcarchive/SFM.dSYMs.zip "dist/SFM/SFM-${VERSION}.dSYMs.zip"
+	ghr --replace "v${VERSION}" "dist/SFM/SFM-${VERSION}.dSYMs.zip"
+
 release_macos_standalone: build_macos_pkg notarize_macos_pkg upload_macos_pkg upload_macos_dsyms
+
+replace_macos_standalone: build_macos_pkg notarize_macos_pkg upload_macos_pkg upload_macos_dsyms
 
 build_tvos:
 	cd ../sing-box-for-apple && \
@@ -271,6 +287,50 @@ update:
 	git fetch
 	git reset FETCH_HEAD --hard
 	git clean -fdx
+
+# =============================================================================
+# Vendor Build with Patches
+# =============================================================================
+# Use this to build with patched dependencies (e.g., <c> counter tag in AWG)
+
+.PHONY: vendor patch-deps build-patched clean-vendor
+
+# Create vendor directory with all dependencies
+vendor:
+	@echo "Creating vendor directory..."
+	go mod vendor
+	@echo "Vendor directory created"
+
+# Apply patches to vendored dependencies
+patch-deps: vendor
+	@echo "Applying dependency patches..."
+	@./patches/amneziawg-go/apply.sh
+	@echo "All patches applied"
+
+# Build with vendored (and patched) dependencies
+build-patched: patch-deps
+	@echo "Building with patched dependencies..."
+	export GOTOOLCHAIN=local && \
+	go build -mod=vendor $(MAIN_PARAMS) $(MAIN)
+	@echo "Build complete"
+
+# Clean vendor directory
+clean-vendor:
+	rm -rf vendor
+	@echo "Vendor directory removed"
+
+# Show patching help
+patch-help:
+	@echo "Vendor/Patch Commands:"
+	@echo ""
+	@echo "  make vendor        - Create vendor directory"
+	@echo "  make patch-deps    - Apply patches to vendor"
+	@echo "  make build-patched - Build with patched dependencies"
+	@echo "  make clean-vendor  - Remove vendor directory"
+	@echo ""
+	@echo "Patches applied:"
+	@echo "  - amneziawg-go: <c> packet counter tag"
+	@echo ""
 
 %:
 	@:

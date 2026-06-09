@@ -2,6 +2,7 @@ package wireguard
 
 import (
 	"context"
+	"github.com/sagernet/sing-box/option"
 	"net/netip"
 	"time"
 
@@ -17,6 +18,7 @@ type EndpointOptions struct {
 	System       bool
 	Handler      tun.Handler
 	UDPTimeout   time.Duration
+	ICMPTimeout  time.Duration
 	Dialer       N.Dialer
 	CreateDialer func(interfaceName string) N.Dialer
 	Name         string
@@ -27,6 +29,7 @@ type EndpointOptions struct {
 	ResolvePeer  func(domain string) (netip.Addr, error)
 	Peers        []PeerOptions
 	Workers      int
+	option.WireGuardAdvancedSecurityOptions
 }
 
 type PeerOptions struct {

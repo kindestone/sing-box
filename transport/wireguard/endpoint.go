@@ -55,6 +55,33 @@ func NewEndpoint(options EndpointOptions) (*Endpoint, error) {
 	if options.ListenPort != 0 {
 		ipcConf += "\nlisten_port=" + F.ToString(options.ListenPort)
 	}
+	if options.JunkPacketCount > 0 {
+		ipcConf += "\njc=" + F.ToString(options.JunkPacketCount)
+	}
+	if options.JunkPacketMinSize > 0 {
+		ipcConf += "\njmin=" + F.ToString(options.JunkPacketMinSize)
+	}
+	if options.JunkPacketMaxSize > 0 {
+		ipcConf += "\njmax=" + F.ToString(options.JunkPacketMaxSize)
+	}
+	if options.InitPacketJunkSize > 0 {
+		ipcConf += "\ns1=" + F.ToString(options.InitPacketJunkSize)
+	}
+	if options.ResponsePacketJunkSize > 0 {
+		ipcConf += "\ns2=" + F.ToString(options.ResponsePacketJunkSize)
+	}
+	if options.InitPacketMagicHeader > 0 {
+		ipcConf += "\nh1=" + F.ToString(options.InitPacketMagicHeader)
+	}
+	if options.ResponsePacketMagicHeader > 0 {
+		ipcConf += "\nh2=" + F.ToString(options.ResponsePacketMagicHeader)
+	}
+	if options.UnderloadPacketMagicHeader > 0 {
+		ipcConf += "\nh3=" + F.ToString(options.UnderloadPacketMagicHeader)
+	}
+	if options.TransportPacketMagicHeader > 0 {
+		ipcConf += "\nh4=" + F.ToString(options.TransportPacketMagicHeader)
+	}
 	var peers []peerConfig
 	for peerIndex, rawPeer := range options.Peers {
 		peer := peerConfig{
@@ -109,6 +136,7 @@ func NewEndpoint(options EndpointOptions) (*Endpoint, error) {
 		System:         options.System,
 		Handler:        options.Handler,
 		UDPTimeout:     options.UDPTimeout,
+		ICMPTimeout:    options.ICMPTimeout,
 		CreateDialer:   options.CreateDialer,
 		Name:           options.Name,
 		MTU:            options.MTU,
@@ -182,10 +210,10 @@ func (e *Endpoint) Start(resolve bool) error {
 		return err
 	}
 	logger := &device.Logger{
-		Verbosef: func(format string, args ...interface{}) {
+		Verbosef: func(format string, args ...any) {
 			e.options.Logger.Debug(fmt.Sprintf(strings.ToLower(format), args...))
 		},
-		Errorf: func(format string, args ...interface{}) {
+		Errorf: func(format string, args ...any) {
 			e.options.Logger.Error(fmt.Sprintf(strings.ToLower(format), args...))
 		},
 	}
@@ -197,13 +225,15 @@ func (e *Endpoint) Start(resolve bool) error {
 	}
 	wgDevice := device.NewDevice(e.options.Context, deviceInput, bind, logger, e.options.Workers)
 	e.tunDevice.SetDevice(wgDevice)
-	ipcConf := e.ipcConf
+	var ipcConf strings.Builder
+	ipcConf.WriteString(e.ipcConf)
 	for _, peer := range e.peers {
-		ipcConf += peer.GenerateIpcLines()
+		ipcConf.WriteString(peer.GenerateIpcLines())
 	}
-	err = wgDevice.IpcSet(ipcConf)
+	err = wgDevice.IpcSet(ipcConf.String())
 	if err != nil {
-		return E.Cause(err, "setup wireguard: \n", ipcConf)
+		wgDevice.Close()
+		return E.Cause(err, "setup wireguard: \n", ipcConf.String())
 	}
 	e.device = wgDevice
 	e.pause = service.FromContext[pause.Manager](e.options.Context)
@@ -229,11 +259,14 @@ func (e *Endpoint) ListenPacket(ctx context.Context, destination M.Socksaddr) (n
 }
 
 func (e *Endpoint) Close() error {
-	if e.device != nil {
-		e.device.Close()
-	}
 	if e.pauseCallback != nil {
 		e.pause.UnregisterCallback(e.pauseCallback)
+		e.pauseCallback = nil
+	}
+	if e.device != nil {
+		e.device.Down()
+		e.device.Close()
+		e.device = nil
 	}
 	return nil
 }
@@ -272,18 +305,19 @@ type peerConfig struct {
 }
 
 func (c peerConfig) GenerateIpcLines() string {
-	ipcLines := "\npublic_key=" + c.publicKeyHex
+	var ipcLines strings.Builder
+	ipcLines.WriteString("\npublic_key=" + c.publicKeyHex)
 	if c.endpoint.IsValid() {
-		ipcLines += "\nendpoint=" + c.endpoint.String()
+		ipcLines.WriteString("\nendpoint=" + c.endpoint.String())
 	}
 	if c.preSharedKeyHex != "" {
-		ipcLines += "\npreshared_key=" + c.preSharedKeyHex
+		ipcLines.WriteString("\npreshared_key=" + c.preSharedKeyHex)
 	}
 	for _, allowedIP := range c.allowedIPs {
-		ipcLines += "\nallowed_ip=" + allowedIP.String()
+		ipcLines.WriteString("\nallowed_ip=" + allowedIP.String())
 	}
 	if c.keepalive > 0 {
-		ipcLines += "\npersistent_keepalive_interval=" + F.ToString(c.keepalive)
+		ipcLines.WriteString("\npersistent_keepalive_interval=" + F.ToString(c.keepalive))
 	}
-	return ipcLines
+	return ipcLines.String()
 }
