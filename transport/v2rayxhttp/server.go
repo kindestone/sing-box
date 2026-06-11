@@ -199,7 +199,6 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	scMaxEachPostBytes := int(s.options.GetNormalizedScMaxEachPostBytes().To)
 	uplinkDataPlacement := s.options.GetNormalizedUplinkDataPlacement()
 	uplinkDataKey := s.options.UplinkDataKey
-	switch uplinkDataPlacement {
 	isUplinkRequest := false
 	switch request.Method {
 	case "GET":
@@ -312,8 +311,6 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 				writer.WriteHeader(http.StatusBadRequest)
 				return
 			}
-		} else {
-			payload, err = io.ReadAll(io.LimitReader(request.Body, int64(scMaxEachPostBytes)+1))
 		}
 		var payload []byte
 		switch uplinkDataPlacement {

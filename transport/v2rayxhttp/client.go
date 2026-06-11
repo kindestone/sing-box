@@ -184,10 +184,10 @@ func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 		logger.DebugContext(ctx, fmt.Sprintf("XHTTP is downloading from %s, mode %s, HTTP version %s, host %s", destLabel2, "stream-down", httpVersion2, requestURL2.Host))
 	}
 	if xmuxClient != nil {
-		xmuxClient.OpenUsage.Add(1)
+		xmuxClient.AddOpenUsage(1)
 	}
 	if xmuxClient2 != nil && xmuxClient2 != xmuxClient {
-		xmuxClient2.OpenUsage.Add(1)
+		xmuxClient2.AddOpenUsage(1)
 	}
 	var closed atomic.Int32
 	uploadBaseCtx := context.WithoutCancel(ctx)
@@ -201,10 +201,10 @@ func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 			}
 			cancelUpload()
 			if xmuxClient != nil {
-				xmuxClient.OpenUsage.Add(-1)
+				xmuxClient.AddOpenUsage(-1)
 			}
 			if xmuxClient2 != nil && xmuxClient2 != xmuxClient {
-				xmuxClient2.OpenUsage.Add(-1)
+				xmuxClient2.AddOpenUsage(-1)
 			}
 		},
 	}
@@ -253,11 +253,13 @@ func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 		defer uploadPipeReader.Interrupt()
 		var seq int64
 		var lastWrite time.Time
+		dynamicHTTPClient := httpClient
+		dynamicXmuxClient := xmuxClient
 		for {
 			select {
-			case <-uploadCtx.Done():
-				return
-			default:
+				case <-uploadCtx.Done():
+					return
+				default:
 			}
 			remainder, err := uploadPipeReader.ReadMultiBuffer()
 			if err != nil {
@@ -287,35 +289,34 @@ func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 					return
 				default:
 				}
-
 				lastWrite = time.Now()
-				if xmuxClient != nil && (xmuxClient.LeftRequests.Add(-1) <= 0 ||
-					(xmuxClient.UnreusableAt != time.Time{} && lastWrite.After(xmuxClient.UnreusableAt))) {
-					httpClient, xmuxClient = c.getHTTPClient()
-				}
-				go func(chunk buf.MultiBuffer, baseCtx context.Context, seqStr string) {
-					postCtx, cancelPost := context.WithCancel(baseCtx)
-					defer cancelPost()
-					defer wroteRequest.Close()
-					err := httpClient.PostPacket(
-						postCtx,
-						url.String(),
-						sessionId,
-						seqStr,
-						chunk
-					)
-					if err != nil {
-						uploadPipeReader.Interrupt()
-						doSplit.Store(false)
+				if dynamicXmuxClient != nil && (dynamicXmuxClient.LeftRequests.Add(-1) <= 0 ||
+					(dynamicXmuxClient.UnreusableAt != time.Time{} && lastWrite.After(dynamicXmuxClient.UnreusableAt))) {
+					dynamicHTTPClient, dynamicXmuxClient = c.getHTTPClient()
 					}
-				}(chunk, reqCtx, seqStr)
-				if _, ok := httpClient.(*DefaultDialerClient); ok {
-					select {
-					case <-wroteRequest.Wait():
-					case <-uploadCtx.Done():
-						return
+					go func(chunk buf.MultiBuffer, baseCtx context.Context, seqStr string, hClient DialerClient) {
+						postCtx, cancelPost := context.WithCancel(baseCtx)
+						defer cancelPost()
+						defer wroteRequest.Close()
+						err := hClient.PostPacket(
+							postCtx,
+				url.String(),
+									  sessionId,
+				seqStr,
+				chunk,
+						)
+						if err != nil {
+							uploadPipeReader.Interrupt()
+							doSplit.Store(false)
+						}
+					}(chunk, reqCtx, seqStr, dynamicHTTPClient)
+					if _, ok := dynamicHTTPClient.(*DefaultDialerClient); ok {
+						select {
+				case <-wroteRequest.Wait():
+				case <-uploadCtx.Done():
+					return
+						}
 					}
-				}
 			}
 		}
 	}()
@@ -338,7 +339,7 @@ func decideHTTPVersion(tlsConfig tls.Config) string {
 	if len(nextProtos) == 0 {
 		tlsConfig.SetNextProtos([]string{http2.NextProtoTLS, "http/1.1"})
 	}
-	
+
 	if len(nextProtos) > 0 && nextProtos[0] == "h3" {
 		return "3"
 	}
@@ -425,57 +426,57 @@ func createHTTPClient(dest M.Socksaddr, dialer N.Dialer, options *option.V2RayXH
 	}
 	var transport http.RoundTripper
 	switch httpVersion {
-	case "3":
-		if keepAlivePeriod == 0 {
-			keepAlivePeriod = xrnet.QuicgoH3KeepAlivePeriod
-		}
-		if keepAlivePeriod < 0 {
-			keepAlivePeriod = 0
-		}
-		quicConfig := &quic.Config{
-			MaxIdleTimeout: xrnet.ConnIdleTimeout,
-			// these two are defaults of quic-go/http3. the default of quic-go (no
-			// http3) is different, so it is hardcoded here for clarity.
-			// https://github.com/quic-go/quic-go/blob/b8ea5c798155950fb5bbfdd06cad1939c9355878/http3/client.go#L36-L39
-			MaxIncomingStreams: -1,
-			KeepAlivePeriod:    keepAlivePeriod,
-		}
-		transport = &http3.Transport{
-			QUICConfig: quicConfig,
-			Dial: func(ctx context.Context, addr string, tlsCfg *gotls.Config, cfg *quic.Config) (*quic.Conn, error) {
-				udpConn, dErr := dialer.DialContext(ctx, N.NetworkUDP, dest)
-				if dErr != nil {
-					return nil, dErr
-				}
-				return qtls.DialEarly(ctx, bufio.NewUnbindPacketConn(udpConn), udpConn.RemoteAddr(), tlsConfig, cfg)
-			},
-		}
-	case "2":
-		if keepAlivePeriod == 0 {
-			keepAlivePeriod = xrnet.ChromeH2KeepAlivePeriod
-		}
-		if keepAlivePeriod < 0 {
-			keepAlivePeriod = 0
-		}
-		transport = &http2.Transport{
-			DialTLSContext: func(ctxInner context.Context, network string, addr string, cfg *gotls.Config) (net.Conn, error) {
+		case "3":
+			if keepAlivePeriod == 0 {
+				keepAlivePeriod = xrnet.QuicgoH3KeepAlivePeriod
+			}
+			if keepAlivePeriod < 0 {
+				keepAlivePeriod = 0
+			}
+			quicConfig := &quic.Config{
+				MaxIdleTimeout: xrnet.ConnIdleTimeout,
+				// these two are defaults of quic-go/http3. the default of quic-go (no
+				// http3) is different, so it is hardcoded here for clarity.
+				// https://github.com/quic-go/quic-go/blob/b8ea5c798155950fb5bbfdd06cad1939c9355878/http3/client.go#L36-L39
+				MaxIncomingStreams: -1,
+				KeepAlivePeriod:    keepAlivePeriod,
+			}
+			transport = &http3.Transport{
+				QUICConfig: quicConfig,
+				Dial: func(ctx context.Context, addr string, tlsCfg *gotls.Config, cfg *quic.Config) (*quic.Conn, error) {
+					udpConn, dErr := dialer.DialContext(ctx, N.NetworkUDP, dest)
+					if dErr != nil {
+						return nil, dErr
+					}
+					return qtls.DialEarly(ctx, bufio.NewUnbindPacketConn(udpConn), udpConn.RemoteAddr(), tlsConfig, cfg)
+				},
+			}
+		case "2":
+			if keepAlivePeriod == 0 {
+				keepAlivePeriod = xrnet.ChromeH2KeepAlivePeriod
+			}
+			if keepAlivePeriod < 0 {
+				keepAlivePeriod = 0
+			}
+			transport = &http2.Transport{
+				DialTLSContext: func(ctxInner context.Context, network string, addr string, cfg *gotls.Config) (net.Conn, error) {
+					return dialContext(ctxInner)
+				},
+				IdleConnTimeout: xrnet.ConnIdleTimeout,
+				ReadIdleTimeout: keepAlivePeriod,
+			}
+		default:
+			httpDialContext := func(ctxInner context.Context, network string, addr string) (net.Conn, error) {
 				return dialContext(ctxInner)
-			},
-			IdleConnTimeout: xrnet.ConnIdleTimeout,
-			ReadIdleTimeout: keepAlivePeriod,
-		}
-	default:
-		httpDialContext := func(ctxInner context.Context, network string, addr string) (net.Conn, error) {
-			return dialContext(ctxInner)
-		}
-		transport = &http.Transport{
-			DialTLSContext:  httpDialContext,
-			DialContext:     httpDialContext,
-			IdleConnTimeout: xrnet.ConnIdleTimeout,
-			// chunked transfer download with KeepAlives is buggy with
-			// http.Client and our custom dial context.
-			DisableKeepAlives: true,
-		}
+			}
+			transport = &http.Transport{
+				DialTLSContext:  httpDialContext,
+				DialContext:     httpDialContext,
+				IdleConnTimeout: xrnet.ConnIdleTimeout,
+				// chunked transfer download with KeepAlives is buggy with
+				// http.Client and our custom dial context.
+				DisableKeepAlives: true,
+			}
 	}
 	client := &DefaultDialerClient{
 		options: options,
