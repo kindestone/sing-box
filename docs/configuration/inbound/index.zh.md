@@ -15,13 +15,14 @@
 
 ### 字段
 
-| 类型            | 格式                            | 注入支持             |
+| 类型          | 格式                          | 注入支持         |
 |---------------|-------------------------------|------------------|
 | `direct`      | [Direct](./direct/)           | :material-close: |
 | `mixed`       | [Mixed](./mixed/)             | TCP              |
 | `socks`       | [SOCKS](./socks/)             | TCP              |
 | `http`        | [HTTP](./http/)               | TCP              |
 | `shadowsocks` | [Shadowsocks](./shadowsocks/) | TCP              |
+| `snell`       | [Snell](./snell/)             | TCP              |
 | `vmess`       | [VMess](./vmess/)             | TCP              |
 | `trojan`      | [Trojan](./trojan/)           | TCP              |
 | `naive`       | [Naive](./naive/)             | :material-close: |

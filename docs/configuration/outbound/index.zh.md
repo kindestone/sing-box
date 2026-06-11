@@ -15,13 +15,14 @@
 
 ### 字段
 
-| 类型             | 格式                             |
-|----------------|--------------------------------|
+| 类型           | 格式                            |
+|----------------|---------------------------------|
 | `direct`       | [Direct](./direct/)             |
 | `block`        | [Block](./block/)               |
 | `socks`        | [SOCKS](./socks/)               |
 | `http`         | [HTTP](./http/)                 |
 | `shadowsocks`  | [Shadowsocks](./shadowsocks/)   |
+| `snell`        | [Snell](./snell/)               |
 | `vmess`        | [VMess](./vmess/)               |
 | `trojan`       | [Trojan](./trojan/)             |
 | `wireguard`    | [Wireguard](./wireguard/)       |
