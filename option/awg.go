@@ -36,7 +36,7 @@ type AwgPeerOptions struct {
 	Address                     string                           `json:"address,omitempty"`
 	Port                        uint16                           `json:"port,omitempty"`
 	PublicKey                   string                           `json:"public_key,omitempty"`
-	PresharedKey                string                           `json:"preshared_key,omitempty"`
+	PresharedKey                string                           `json:"pre_shared_key,omitempty"`
 	AllowedIPs                  badoption.Listable[netip.Prefix] `json:"allowed_ips,omitempty"`
 	PersistentKeepaliveInterval uint16                           `json:"persistent_keepalive_interval,omitempty"`
 }
