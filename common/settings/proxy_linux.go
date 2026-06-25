@@ -6,7 +6,6 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/sagernet/sing/common"
 	E "github.com/sagernet/sing/common/exceptions"
@@ -131,7 +130,8 @@ func (p *LinuxSystemProxy) runAsUser(name string, args ...string) error {
 	if os.Getuid() != 0 {
 		return shell.Exec(name, args...).Attach().Run()
 	} else if p.sudoUser != "" {
-		return shell.Exec("su", "-", p.sudoUser, "-c", F.ToString(name, " ", strings.Join(args, " "))).Attach().Run()
+		progargs := append([]string{"-p", "-u", p.sudoUser, "--", name}, args...)
+		return shell.Exec("runuser", progargs...).Attach().Run()
 	} else {
 		return E.New("set system proxy: unable to set as root")
 	}
