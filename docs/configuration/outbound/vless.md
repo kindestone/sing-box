@@ -12,6 +12,7 @@
   "network": "tcp",
   "tls": {},
   "packet_encoding": "",
+  "encryption": "",
   "multiplex": {},
   "transport": {},
 
@@ -72,6 +73,10 @@ UDP packet encoding, xudp is used by default.
 #### multiplex
 
 See [Multiplex](/configuration/shared/multiplex#outbound) for details.
+
+#### encryption
+
+Vless encryption
 
 #### transport
 
