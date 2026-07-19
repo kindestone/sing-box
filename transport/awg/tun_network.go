@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/netip"
+	"syscall"
 
 	"github.com/amnezia-vpn/amneziawg-go/tun"
 	"github.com/amnezia-vpn/amneziawg-go/tun/netstack"
@@ -12,7 +13,8 @@ import (
 
 type networkTun struct {
 	tun.Device
-	conn *netstack.Net
+	conn      *netstack.Net
+	addresses []netip.Addr
 }
 
 func newNetworkTun(address []netip.Prefix, mtu uint32) (tunAdapter, error) {
@@ -27,8 +29,9 @@ func newNetworkTun(address []netip.Prefix, mtu uint32) (tunAdapter, error) {
 	}
 
 	return &networkTun{
-		Device: tun,
-		conn:   conn,
+		Device:    tun,
+		conn:      conn,
+		addresses: localAddresses,
 	}, nil
 }
 
@@ -41,5 +44,22 @@ func (t *networkTun) DialContext(ctx context.Context, network string, destinatio
 }
 
 func (t *networkTun) ListenPacket(ctx context.Context, destination metadata.Socksaddr) (net.PacketConn, error) {
-	return t.conn.DialUDPAddrPort(netip.AddrPort{}, destination.AddrPort())
+	laddr := destination.AddrPort()
+	if laddr.Addr().IsUnspecified() {
+		local, ok := t.localAddress(laddr.Addr().Is4())
+		if !ok {
+			return nil, syscall.EAFNOSUPPORT
+		}
+		laddr = netip.AddrPortFrom(local, laddr.Port())
+	}
+	return t.conn.ListenUDPAddrPort(laddr)
+}
+
+func (t *networkTun) localAddress(is4 bool) (netip.Addr, bool) {
+	for _, addr := range t.addresses {
+		if addr.Is4() == is4 {
+			return addr, true
+		}
+	}
+	return netip.Addr{}, false
 }

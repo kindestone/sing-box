@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/netip"
 	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/amnezia-vpn/amneziawg-go/conn"
@@ -22,6 +23,7 @@ type bind_adapter struct {
 	dialer N.Dialer
 	ctx    context.Context
 	mutex  sync.Mutex
+	closed atomic.Bool
 }
 
 func newBind(ctx context.Context, dial N.Dialer) conn.Bind {
@@ -39,6 +41,9 @@ func (b *bind_adapter) receive(c net.PacketConn) conn.ReceiveFunc {
 	return func(packets [][]byte, sizes []int, eps []conn.Endpoint) (n int, err error) {
 		n, addr, err := c.ReadFrom(packets[0])
 		if err != nil {
+			if b.closed.Load() {
+				return 0, net.ErrClosed
+			}
 			return 0, E.Cause(err, "read data")
 		}
 
@@ -60,6 +65,7 @@ func (b *bind_adapter) Open(port uint16) (fns []conn.ReceiveFunc, actualPort uin
 	if b.conn4 != nil || b.conn6 != nil {
 		return nil, 0, conn.ErrBindAlreadyOpen
 	}
+	b.closed.Store(false)
 
 	conn4, err := b.connect(netip.IPv4Unspecified(), port)
 	if err != nil && !errors.Is(err, syscall.EAFNOSUPPORT) {
@@ -86,6 +92,8 @@ func (b *bind_adapter) Open(port uint16) (fns []conn.ReceiveFunc, actualPort uin
 func (b *bind_adapter) Close() error {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
+
+	b.closed.Store(true)
 
 	var err4, err6 error
 
