@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/amnezia-vpn/amneziawg-go v0.2.17-0.20251219021448-449d7cffd4ad
 	github.com/anthropics/anthropic-sdk-go v1.26.0
-	github.com/anytls/sing-anytls v0.0.11
+	github.com/anytls/sing-anytls v0.0.13
 	github.com/caddyserver/certmagic v0.25.2
 	github.com/coder/websocket v1.8.14
 	github.com/cretz/bine v0.2.0
