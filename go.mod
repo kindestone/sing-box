@@ -177,4 +177,4 @@ replace github.com/sagernet/sing-vmess => github.com/starifly/sing-vmess v0.2.8-
 
 replace github.com/sagernet/gvisor => github.com/nintendobox/gvisor v0.0.2-fix
 
-replace github.com/sagernet/sing-tun => github.com/qr243vbi/sing-tun v0.8.11-mod1
+replace github.com/sagernet/sing-tun => github.com/qr243vbi/sing-tun v0.8.11-mod3
