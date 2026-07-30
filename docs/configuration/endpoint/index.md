@@ -23,6 +23,7 @@ An endpoint is a protocol with inbound and outbound behavior.
 |-------------|---------------------------|
 | `wireguard` | [WireGuard](./wireguard/) |
 | `tailscale` | [Tailscale](./tailscale/) |
+| `amnezia`   | [Amnezia](./amnezia/)     |
 
 #### tag
 
